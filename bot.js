@@ -116,6 +116,108 @@ async function sendWelcomeMessage(userId, userName) {
         }
     });
 
+
+
+
+
+const adminId = 1613186921; // Remplace avec ton ID Telegram
+
+let postDraft = {}; // Stocke temporairement les posts en attente de confirmation
+
+// 📌 Commande /admin pour ouvrir le menu admin
+bot.onText(/\/admin/, async (msg) => {
+    if (msg.from.id !== adminId) return; // Vérifie si c'est l'admin
+
+    const keyboard = {
+        inline_keyboard: [
+            [{ text: '📊 Nombre total d\'utilisateurs', callback_data: 'stats_total' }],
+            [{ text: '📅 Utilisateurs ce mois-ci', callback_data: 'stats_month' }],
+            [{ text: '📝 Envoyer un post', callback_data: 'send_post' }]
+        ]
+    };
+
+    bot.sendMessage(adminId, "🔧 *Panneau d'administration*", {
+        parse_mode: 'Markdown',
+        reply_markup: keyboard
+    });
+});
+
+// 📊 Gestion des stats
+bot.on('callback_query', async (query) => {
+    const data = query.data;
+
+    if (data === 'stats_total') {
+        const totalUsers = await client.db(dbName).collection(collectionName).countDocuments();
+        bot.sendMessage(adminId, `📊 Nombre total d'utilisateurs : *${totalUsers}*`, { parse_mode: 'Markdown' });
+    } 
+
+    else if (data === 'stats_month') {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const monthUsers = await client.db(dbName).collection(collectionName).countDocuments({
+            timestamp: { $gte: startOfMonth }
+        });
+
+        bot.sendMessage(adminId, `📅 Nombre d'inscriptions ce mois-ci : *${monthUsers}*`, { parse_mode: 'Markdown' });
+    } 
+
+    else if (data === 'send_post') {
+        bot.sendMessage(adminId, "📝 *Envoie-moi ton message* (texte, image, vidéo, etc.)", { parse_mode: 'Markdown' });
+        postDraft[adminId] = { content: null }; // Prépare un espace pour l'admin
+    }
+});
+
+// 📩 Stocker le message temporairement
+bot.on('message', (msg) => {
+    if (msg.from.id !== adminId) return;
+
+    // Vérifie si l'admin est en train de créer un post
+    if (postDraft[adminId] && !postDraft[adminId].content) {
+        postDraft[adminId].content = msg;
+        
+        const keyboard = {
+            inline_keyboard: [
+                [{ text: '✅ Confirmer et envoyer', callback_data: 'confirm_post' }],
+                [{ text: '❌ Annuler', callback_data: 'cancel_post' }]
+            ]
+        };
+
+        bot.sendMessage(adminId, "📩 *Prévisualisation du post*\n\nConfirmer l'envoi ?", {
+            parse_mode: 'Markdown',
+            reply_markup: keyboard
+        });
+    }
+});
+
+// ✅ Confirmation et envoi
+bot.on('callback_query', async (query) => {
+    if (query.data === 'confirm_post' && postDraft[adminId] && postDraft[adminId].content) {
+        const post = postDraft[adminId].content;
+
+        // Copie le message de l'admin et l'affiche dans le bot
+        bot.copyMessage(adminId, adminId, post.message_id);
+
+        bot.sendMessage(adminId, "✅ *Post envoyé avec succès !*", { parse_mode: 'Markdown' });
+        delete postDraft[adminId]; // Supprime le brouillon après envoi
+    } 
+
+    else if (query.data === 'cancel_post') {
+        bot.sendMessage(adminId, "❌ *Post annulé*", { parse_mode: 'Markdown' });
+        delete postDraft[adminId]; // Supprime le brouillon
+    }
+});
+
+
+
+
+
+
+
+
+    
+
     // 🌍 Serveur keep-alive
     http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
