@@ -9,7 +9,7 @@ const collectionName = 'usersVF';
 
 // Configuration Telegram
 const token = '7914191446:AAHavIOWX1CFWFab9MaKqyj0UWFzYyqWpvE';
-const channelId = '-1002288636689';
+const channelId = '-1002402408788';
 
 // Initialisation des composants
 const bot = new TelegramBot(token, { polling: true });
