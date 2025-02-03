@@ -119,113 +119,104 @@ async function sendWelcomeMessage(userId, userName) {
 
 
 
+// ⚙️ Configuration de l'admin
+const adminId = 1613186921; // Remplacez par l'ID réel de l'administrateur
 
-// ⚙️ Variable globale pour gérer le brouillon du message
-let postDraft = {};
-
-// 💬 Commande /admin
-bot.onText(/\/admin/, (msg) => {
-    const adminId = msg.from.id;
-    const adminUsername = msg.from.username;
+// Commande /admin pour accéder au menu admin
+bot.onText(/\/admin/, async (msg) => {
+    const userId = msg.from.id;
     
-    if (adminId === 1613186921) {  // Remplace "YOUR_ADMIN_ID" par l'ID de ton admin
-        const adminMenu = {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'Envoyer un message à tous', callback_data: 'send_message_to_all' }],
-                    [{ text: 'Voir les utilisateurs', callback_data: 'view_users_count' }]
-                ]
-            }
-        };
-        
-        bot.sendMessage(adminId, "Bienvenue dans le menu d'administration ! Choisissez une action :", adminMenu);
-    }
-});
-
-// 💬 Envoi d'un message à tous les utilisateurs
-bot.on('callback_query', async (query) => {
-    const adminId = query.from.id;
-
     // Vérification que l'utilisateur est bien l'admin
-    if (adminId !== 1613186921) return;
-
-    // Si l'admin veut envoyer un message à tous les utilisateurs
-    if (query.data === 'send_message_to_all') {
-        bot.sendMessage(adminId, "📢 Veuillez envoyer le message que vous souhaitez diffuser à tous les utilisateurs.");
-
-        // Sauvegarder la commande pour créer un message
-        postDraft[adminId] = {
-            stage: 'waiting_for_message'
-        };
+    if (userId !== adminId) {
+        return bot.sendMessage(userId, "Désolé, vous n'avez pas accès à cette commande.");
     }
 
-    // Affichage du nombre d'utilisateurs
-    if (query.data === 'view_users_count') {
-        const db = await connectDB();
-        const users = await db.collection(collectionName).find().toArray();
-        const userCount = users.length;
+    // Menu admin avec options
+    const keyboard = {
+        inline_keyboard: [
+            [
+                { text: "Nombre d'utilisateurs", callback_data: 'user_count' },
+                { text: 'Nombre d\'utilisateurs ce mois', callback_data: 'user_count_month' }
+            ],
+            [
+                { text: 'Envoyer un message', callback_data: 'send_message' }
+            ]
+        ]
+    };
 
-        bot.sendMessage(adminId, `👥 Nombre d'utilisateurs : ${userCount}`);
-    }
-
-    // Confirmation de l'envoi
-    if (query.data === 'confirm_post' && postDraft[adminId] && postDraft[adminId].content) {
-        const post = postDraft[adminId].content;
-
-        const db = await connectDB();
-        const users = await db.collection(collectionName).find().toArray();
-
-        try {
-            // Envoi à tous les utilisateurs en utilisant copyMessage
-            for (let user of users) {
-                const userId = user.user_id;
-
-                // Utilisation de copyMessage pour envoyer le même message à tous
-                await bot.copyMessage(userId, post.chat_id, post.message_id);
-
-                console.log(`✅ Message envoyé à ${userId}`);
-            }
-
-            bot.sendMessage(adminId, "✅ *Message envoyé avec succès à tous les utilisateurs !*", { parse_mode: 'Markdown' });
-            delete postDraft[adminId]; // Supprime le brouillon après l'envoi
-
-        } catch (error) {
-            console.error("❌ ERREUR lors de l'envoi du post:", error);
-            bot.sendMessage(adminId, "❌ Échec de l'envoi du post.");
-        }
-    }
-
-    // Annuler l'envoi
-    if (query.data === 'cancel_post') {
-        bot.sendMessage(adminId, "❌ *Post annulé*", { parse_mode: 'Markdown' });
-        delete postDraft[adminId]; // Supprime le brouillon
-    }
+    await bot.sendMessage(userId, "Bienvenue dans le menu admin", {
+        reply_markup: keyboard
+    });
 });
 
-// Lorsque l'admin envoie un message texte
-bot.on('message', (msg) => {
-    const adminId = msg.from.id;
+// Actions en fonction des boutons du menu admin
+bot.on('callback_query', async (callbackQuery) => {
+    const userId = callbackQuery.from.id;
+    const data = callbackQuery.data;
 
-    if (postDraft[adminId] && postDraft[adminId].stage === 'waiting_for_message') {
-        const { message_id, chat, text } = msg;
+    if (userId !== adminId) {
+        return;
+    }
 
-        // Sauvegarder le message dans le brouillon
-        postDraft[adminId].content = { 
-            chat_id: chat.id,
-            message_id: message_id
-        };
-        postDraft[adminId].stage = 'confirmed';
+    const db = await connectDB();
 
-        bot.sendMessage(adminId, "✅ *Message enregistré !* Vous pouvez maintenant confirmer l'envoi à tous les utilisateurs.", {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: 'Confirmer l\'envoi', callback_data: 'confirm_post' }],
-                    [{ text: 'Annuler', callback_data: 'cancel_post' }]
-                ]
-            }
+    if (data === 'user_count') {
+        // Nombre d'utilisateurs
+        const userCount = await db.collection(collectionName).countDocuments();
+        bot.sendMessage(userId, `Il y a actuellement ${userCount} utilisateurs.`);
+    } else if (data === 'user_count_month') {
+        // Nombre d'utilisateurs ce mois
+        const currentMonth = new Date().getMonth();
+        const userCountMonth = await db.collection(collectionName).countDocuments({
+            timestamp: { $gte: new Date(new Date().setMonth(currentMonth)) }
         });
+        bot.sendMessage(userId, `Il y a ${userCountMonth} utilisateurs ce mois-ci.`);
+    } else if (data === 'send_message') {
+        // Demander le message à envoyer
+        bot.sendMessage(userId, "Envoyez le message que vous souhaitez diffuser à tous les utilisateurs.");
+        bot.once('message', async (message) => {
+            const userMessage = message.text;
+            // Demander confirmation de l'envoi
+            bot.sendMessage(userId, "Êtes-vous sûr de vouloir envoyer ce message à tous les utilisateurs ?\n\n" + userMessage, {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            { text: 'Oui, envoyer', callback_data: 'confirm_send' },
+                            { text: 'Non, annuler', callback_data: 'cancel_send' }
+                        ]
+                    ]
+                }
+            });
+        });
+    } else if (data === 'confirm_send') {
+        // Envoi à tous les utilisateurs
+        const userMessage = callbackQuery.message.text.replace("Êtes-vous sûr de vouloir envoyer ce message à tous les utilisateurs ?", "").trim();
+        await sendMessageToAllUsers(userMessage);
+        bot.sendMessage(userId, "Le message a été envoyé à tous les utilisateurs.");
+    } else if (data === 'cancel_send') {
+        bot.sendMessage(userId, "Envoi du message annulé.");
     }
+
+    bot.answerCallbackQuery(callbackQuery.id);
 });
+
+// Fonction pour envoyer un message à tous les utilisateurs
+async function sendMessageToAllUsers(message) {
+    try {
+        const db = await connectDB();
+        const users = await db.collection(collectionName).find().toArray();
+        for (let user of users) {
+            try {
+                await bot.sendMessage(user.user_id, message);
+                console.log(`✅ Message envoyé à ${user.username} (${user.user_id})`);
+            } catch (error) {
+                console.error(`❌ Échec d'envoi à ${user.username} (${user.user_id}):`, error.message);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Erreur lors de l\'envoi à tous les utilisateurs:', error.message);
+    }
+}
 
 
 
