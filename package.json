@@ -1,0 +1,24 @@
+{
+  "name": "telegram-bot-mongodb",
+  "version": "1.0.0",
+  "description": "Bot Telegram avec sauvegarde MongoDB pour les demandes d'adhésion",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "mongodb"
+  ],
+  "author": "Votre Nom",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^6.5.0",
+    "node-telegram-bot-api": "^0.61.0"
+  },
+  "engines": {
+    "node": ">=16.x"
+  }
+}
