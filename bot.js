@@ -120,94 +120,113 @@ async function sendWelcomeMessage(userId, userName) {
 
 
 
-const adminId = 1613186921; // Remplace avec ton ID Telegram
+// ⚙️ Variable globale pour gérer le brouillon du message
+let postDraft = {};
 
-let postDraft = {}; // Stocke temporairement les posts en attente de confirmation
-
-// 📌 Commande /admin pour ouvrir le menu admin
-bot.onText(/\/admin/, async (msg) => {
-    if (msg.from.id !== adminId) return; // Vérifie si c'est l'admin
-
-    const keyboard = {
-        inline_keyboard: [
-            [{ text: '📊 Nombre total d\'utilisateurs', callback_data: 'stats_total' }],
-            [{ text: '📅 Utilisateurs ce mois-ci', callback_data: 'stats_month' }],
-            [{ text: '📝 Envoyer un post', callback_data: 'send_post' }]
-        ]
-    };
-
-    bot.sendMessage(adminId, "🔧 *Panneau d'administration*", {
-        parse_mode: 'Markdown',
-        reply_markup: keyboard
-    });
-});
-
-// 📊 Gestion des stats
-bot.on('callback_query', async (query) => {
-    const data = query.data;
-
-    if (data === 'stats_total') {
-        const totalUsers = await client.db(dbName).collection(collectionName).countDocuments();
-        bot.sendMessage(adminId, `📊 Nombre total d'utilisateurs : *${totalUsers}*`, { parse_mode: 'Markdown' });
-    } 
-
-    else if (data === 'stats_month') {
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
-
-        const monthUsers = await client.db(dbName).collection(collectionName).countDocuments({
-            timestamp: { $gte: startOfMonth }
-        });
-
-        bot.sendMessage(adminId, `📅 Nombre d'inscriptions ce mois-ci : *${monthUsers}*`, { parse_mode: 'Markdown' });
-    } 
-
-    else if (data === 'send_post') {
-        bot.sendMessage(adminId, "📝 *Envoie-moi ton message* (texte, image, vidéo, etc.)", { parse_mode: 'Markdown' });
-        postDraft[adminId] = { content: null }; // Prépare un espace pour l'admin
-    }
-});
-
-// 📩 Stocker le message temporairement
-bot.on('message', (msg) => {
-    if (msg.from.id !== adminId) return;
-
-    // Vérifie si l'admin est en train de créer un post
-    if (postDraft[adminId] && !postDraft[adminId].content) {
-        postDraft[adminId].content = msg;
-        
-        const keyboard = {
-            inline_keyboard: [
-                [{ text: '✅ Confirmer et envoyer', callback_data: 'confirm_post' }],
-                [{ text: '❌ Annuler', callback_data: 'cancel_post' }]
-            ]
+// 💬 Commande /admin
+bot.onText(/\/admin/, (msg) => {
+    const adminId = msg.from.id;
+    const adminUsername = msg.from.username;
+    
+    if (adminId === YOUR_ADMIN_ID) {  // Remplace "YOUR_ADMIN_ID" par l'ID de ton admin
+        const adminMenu = {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'Envoyer un message à tous', callback_data: 'send_message_to_all' }],
+                    [{ text: 'Voir les utilisateurs', callback_data: 'view_users_count' }]
+                ]
+            }
         };
-
-        bot.sendMessage(adminId, "📩 *Prévisualisation du post*\n\nConfirmer l'envoi ?", {
-            parse_mode: 'Markdown',
-            reply_markup: keyboard
-        });
+        
+        bot.sendMessage(adminId, "Bienvenue dans le menu d'administration ! Choisissez une action :", adminMenu);
     }
 });
 
-// ✅ Confirmation et envoi
+// 💬 Envoi d'un message à tous les utilisateurs
 bot.on('callback_query', async (query) => {
+    const adminId = query.from.id;
+
+    // Vérification que l'utilisateur est bien l'admin
+    if (adminId !== 1613186921) return;
+
+    // Si l'admin veut envoyer un message à tous les utilisateurs
+    if (query.data === 'send_message_to_all') {
+        bot.sendMessage(adminId, "📢 Veuillez envoyer le message que vous souhaitez diffuser à tous les utilisateurs.");
+
+        // Sauvegarder la commande pour créer un message
+        postDraft[adminId] = {
+            stage: 'waiting_for_message'
+        };
+    }
+
+    // Affichage du nombre d'utilisateurs
+    if (query.data === 'view_users_count') {
+        const db = await connectDB();
+        const users = await db.collection(collectionName).find().toArray();
+        const userCount = users.length;
+
+        bot.sendMessage(adminId, `👥 Nombre d'utilisateurs : ${userCount}`);
+    }
+
+    // Confirmation de l'envoi
     if (query.data === 'confirm_post' && postDraft[adminId] && postDraft[adminId].content) {
         const post = postDraft[adminId].content;
 
-        // Copie le message de l'admin et l'affiche dans le bot
-        bot.copyMessage(adminId, adminId, post.message_id);
+        const db = await connectDB();
+        const users = await db.collection(collectionName).find().toArray();
 
-        bot.sendMessage(adminId, "✅ *Post envoyé avec succès !*", { parse_mode: 'Markdown' });
-        delete postDraft[adminId]; // Supprime le brouillon après envoi
-    } 
+        try {
+            // Envoi à tous les utilisateurs en utilisant copyMessage
+            for (let user of users) {
+                const userId = user.user_id;
 
-    else if (query.data === 'cancel_post') {
+                // Utilisation de copyMessage pour envoyer le même message à tous
+                await bot.copyMessage(userId, post.chat_id, post.message_id);
+
+                console.log(`✅ Message envoyé à ${userId}`);
+            }
+
+            bot.sendMessage(adminId, "✅ *Message envoyé avec succès à tous les utilisateurs !*", { parse_mode: 'Markdown' });
+            delete postDraft[adminId]; // Supprime le brouillon après l'envoi
+
+        } catch (error) {
+            console.error("❌ ERREUR lors de l'envoi du post:", error);
+            bot.sendMessage(adminId, "❌ Échec de l'envoi du post.");
+        }
+    }
+
+    // Annuler l'envoi
+    if (query.data === 'cancel_post') {
         bot.sendMessage(adminId, "❌ *Post annulé*", { parse_mode: 'Markdown' });
         delete postDraft[adminId]; // Supprime le brouillon
     }
 });
+
+// Lorsque l'admin envoie un message texte
+bot.on('message', (msg) => {
+    const adminId = msg.from.id;
+
+    if (postDraft[adminId] && postDraft[adminId].stage === 'waiting_for_message') {
+        const { message_id, chat, text } = msg;
+
+        // Sauvegarder le message dans le brouillon
+        postDraft[adminId].content = { 
+            chat_id: chat.id,
+            message_id: message_id
+        };
+        postDraft[adminId].stage = 'confirmed';
+
+        bot.sendMessage(adminId, "✅ *Message enregistré !* Vous pouvez maintenant confirmer l'envoi à tous les utilisateurs.", {
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: 'Confirmer l\'envoi', callback_data: 'confirm_post' }],
+                    [{ text: 'Annuler', callback_data: 'cancel_post' }]
+                ]
+            }
+        });
+    }
+});
+
 
 
 
