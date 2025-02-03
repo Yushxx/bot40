@@ -128,7 +128,7 @@ bot.onText(/\/admin/, (msg) => {
     const adminId = msg.from.id;
     const adminUsername = msg.from.username;
     
-    if (adminId === YOUR_ADMIN_ID) {  // Remplace "YOUR_ADMIN_ID" par l'ID de ton admin
+    if (adminId === 1613186921) {  // Remplace "YOUR_ADMIN_ID" par l'ID de ton admin
         const adminMenu = {
             reply_markup: {
                 inline_keyboard: [
