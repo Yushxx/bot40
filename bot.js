@@ -5,7 +5,7 @@ const http = require('http');
 // Configuration MongoDB
 const mongoUri = 'mongodb+srv://josh:JcipLjQSbhxbruLU@cluster0.hn4lm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'; // À modifier
 const dbName = 'telegramBotDB';
-const collectionName = 'usvf';
+const collectionName = 'usersVF';
 
 // Configuration Telegram
 const token = '7914191446:AAHavIOWX1CFWFab9MaKqyj0UWFzYyqWpvE';
@@ -27,46 +27,73 @@ async function connectDB() {
   }
 }
 
+// Fonction améliorée d'envoi de message
+async function sendWelcomeMessage(userId, userName) {
+  try {
+    const videoUrl = 'https://t.me/morxmorcash/19';
+    const message = `${userName}, félicitations\\! Vous êtes sur le point de rejoindre un groupe d'élite...`;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: 'Canal 1🤑', url: 'https://t.me/+r51NVBAziak5NzZk' },
+          { text: 'Canal 2🤑', url: 'https://t.me/+sL_NSnUaTugyODlk' },
+        ],
+        [
+          { text: 'Canal 3✅️', url: 'https://t.me/+5kl4Nte1HS5lOGZk' },
+          { text: 'Canal 4✅️', url: 'https://t.me/+tKWRcyrKwh9jMzA8' },
+        ],
+        [
+          { text: 'Join le bot 🤑', url: 'https://t.me/Applepffortunebothack_bot' },
+        ]
+      ]
+    };
+
+    // Vérification avant envoi
+    if (!userId || !userName) {
+      throw new Error('Données utilisateur manquantes');
+    }
+
+    const sentMessage = await bot.sendVideo(userId, videoUrl, {
+      caption: message,
+      parse_mode: 'MarkdownV2',
+      reply_markup: keyboard
+    });
+
+    console.log(`Message envoyé à ${userName} (ID: ${userId}) à ${new Date().toISOString()}`);
+    return sentMessage;
+
+  } catch (error) {
+    console.error(`Échec d'envoi à ${userName}:`, error.response?.body || error.message);
+    // Réessayer une fois après 2 secondes
+    if (error.response?.body?.error_code === 429) {
+      console.log(`Nouvelle tentative pour ${userName}...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return sendWelcomeMessage(userId, userName);
+    }
+  }
+}
+
 // Structure principale
 (async () => {
   const db = await connectDB();
 
-  // Gestion des demandes d'adhésion
   bot.on('chat_join_request', async (msg) => {
-    const chatId = msg.chat.id;
+    const chatId = msg.chat.id.toString();
     const userId = msg.from.id;
-    const userName = msg.from.first_name || msg.from.username;
+    const userName = msg.from.first_name || msg.from.username || 'Inconnu';
 
-    if (chatId.toString() === channelId) {
-      // Envoi de la vidéo après 5 secondes
-      setTimeout(() => {
-        const videoUrl = 'https://t.me/morxmorcash/19';
-        const message = `${userName}, félicitations\\! Vous êtes sur le point de rejoindre un groupe d'élite...`;
+    if (chatId === channelId) {
+      console.log(`Nouvelle demande de ${userName} (${userId}) à ${new Date().toISOString()}`);
 
-        const keyboard = {
-          inline_keyboard: [
-            [
-              { text: 'Canal 1🤑', url: 'https://t.me/+r51NVBAziak5NzZk' },
-              { text: 'Canal 2🤑', url: 'https://t.me/+sL_NSnUaTugyODlk' },
-            ],
-            [
-              { text: 'Canal 3✅️', url: 'https://t.me/+5kl4Nte1HS5lOGZk' },
-              { text: 'Canal 4✅️', url: 'https://t.me/+tKWRcyrKwh9jMzA8' },
-            ],
-            [
-              { text: 'Join le bot 🤑', url: 'https://t.me/Applepffortunebothack_bot' },
-            ]
-          ]
-        };
-
-        bot.sendVideo(userId, videoUrl, {
-          caption: message,
-          parse_mode: 'MarkdownV2',
-          reply_markup: keyboard
-        })
-        .then(() => console.log(`Message envoyé à ${userName}`))
-        .catch(err => console.error('Erreur d\'envoi:', err));
-      }, 5000);
+      // Envoi du message avec gestion d'erreur
+      setTimeout(async () => {
+        try {
+          await sendWelcomeMessage(userId, userName);
+        } catch (error) {
+          console.error(`Échec critique d'envoi à ${userName}:`, error);
+        }
+      }, 5000); // 5 secondes
 
       // Approbation après 10 minutes
       setTimeout(async () => {
@@ -74,7 +101,6 @@ async function connectDB() {
           await bot.approveChatJoinRequest(chatId, userId);
           console.log(`Utilisateur ${userName} approuvé`);
 
-          // Sauvegarde dans MongoDB
           await db.collection(collectionName).insertOne({
             user_id: userId,
             chat_id: chatId,
@@ -83,11 +109,10 @@ async function connectDB() {
             status: 'approved'
           });
 
-          console.log(`Données sauvegardées pour ${userName}`);
         } catch (error) {
           console.error('Erreur lors de l\'approbation:', error);
         }
-      }, 600000);
+      }, 600000); // 10 minutes
     }
   });
 
