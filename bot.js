@@ -26,10 +26,9 @@ async function connectDB() {
     }
 }
 
-// 📩 Fonction d'envoi de message améliorée
 async function sendWelcomeMessage(userId, userName) {
     try {
-        const message = `*${userName}*, félicitations ! 🚀\n\nPrêt à rejoindre l'élite ?\n\n👉 *Clique sur les liens ci-dessous* :`;
+        const message = `🔥 *${userName}*, ton accès exclusif est prêt ! 🔥\n\n🚀 Seuls les meilleurs profitent de cette opportunité.\n💰 Des stratégies, des astuces, des gains… tout est là !\n\n❌ Ne reste pas en dehors du cercle fermé.\n\n👇 *Rejoins maintenant avant qu'il ne soit trop tard* :`;
         const keyboard = {
             inline_keyboard: [
                 [{ text: '🔥 Canal VIP 1', url: 'https://t.me/+r51NVBAziak5NzZk' }],
