@@ -29,7 +29,7 @@ async function connectDB() {
 // 📩 Fonction d'envoi de message améliorée
 async function sendWelcomeMessage(userId, userName) {
     try {
-        const message = `*${userName}*, 🚀 *Félicitations, votre accès est presque validé*  \n\n!
+        const message = `*${userName}*, 🚀 *Félicitations, votre accès est presque validé!*  \n\n
 
 🔥 Vous êtes sur le point de rejoindre un cercle ultra privé réservé aux esprits ambitieux, prêts à transformer leur avenir.
 \n\n👉⚠️ *Attention* : Pour finaliser votre adhésion et débloquer l'accès à notre communauté privée, veuillez confirmer votre présence en rejoignant les canaux ci dessous
