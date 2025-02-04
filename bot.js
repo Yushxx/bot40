@@ -8,7 +8,7 @@ const mongoUri = 'mongodb+srv://josh:JcipLjQSbhxbruLU@cluster0.hn4lm.mongodb.net
 const channelId = '-1002237370463';
 
 const dbName = 'telegramBotDB';
-const collectionName = 'usersVF';
+const collectionName = 'userVF';
 
 // 🏗 Initialisation
 const bot = new TelegramBot(token, { polling: true });
@@ -38,6 +38,11 @@ async function sendWelcomeMessage(userId, userName) {
             ]
         };
 
+        await bot.sendMessage(userId, message, {
+            parse_mode: 'Markdown',
+            reply_markup: keyboard,
+            disable_web_page_preview: true
+        });
 
         console.log(`✅ Message envoyé à ${userName} (ID: ${userId})`);
 
@@ -110,6 +115,12 @@ async function sendWelcomeMessage(userId, userName) {
             }
         }
     });
+
+   
+
+
+
+
 
 
 
