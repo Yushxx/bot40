@@ -120,95 +120,92 @@ async function sendWelcomeMessage(userId, userName) {
 
 
 // ⚙️ Configuration de l'admin
-const adminId = 1613186921; // Remplacez par l'ID réel de l'administrateur
+const adminId = 1613186921; // Remplace par ton ID admin
 
-// Commande /admin pour accéder au menu admin
+// Commande /admin pour afficher le menu
 bot.onText(/\/admin/, async (msg) => {
     const userId = msg.from.id;
     
-    // Vérification que l'utilisateur est bien l'admin
     if (userId !== adminId) {
-        return bot.sendMessage(userId, "Désolé, vous n'avez pas accès à cette commande.");
+        return bot.sendMessage(userId, "⛔ Vous n'avez pas accès à cette commande.");
     }
 
-    // Menu admin avec options
     const keyboard = {
         inline_keyboard: [
             [
-                { text: "Nombre d'utilisateurs", callback_data: 'user_count' },
-                { text: 'Nombre d\'utilisateurs ce mois', callback_data: 'user_count_month' }
+                { text: "👥 Nombre d'utilisateurs", callback_data: 'user_count' },
+                { text: '📊 Nombre ce mois', callback_data: 'user_count_month' }
             ],
-            [
-                { text: 'Envoyer un message', callback_data: 'send_message' }
-            ]
+            [{ text: '📢 Envoyer un message', callback_data: 'send_message' }]
         ]
     };
 
-    await bot.sendMessage(userId, "Bienvenue dans le menu admin", {
+    await bot.sendMessage(userId, "📌 *Menu Admin*", {
+        parse_mode: "Markdown",
         reply_markup: keyboard
     });
 });
 
-// Actions en fonction des boutons du menu admin
+// Gestion des boutons du menu admin
 bot.on('callback_query', async (callbackQuery) => {
     const userId = callbackQuery.from.id;
     const data = callbackQuery.data;
-
-    if (userId !== adminId) {
-        return;
-    }
-
     const db = await connectDB();
 
+    if (userId !== adminId) return;
+
     if (data === 'user_count') {
-        // Nombre d'utilisateurs
         const userCount = await db.collection(collectionName).countDocuments();
-        bot.sendMessage(userId, `Il y a actuellement ${userCount} utilisateurs.`);
+        bot.sendMessage(userId, `📊 Nombre total d'utilisateurs : *${userCount}*`, { parse_mode: "Markdown" });
+
     } else if (data === 'user_count_month') {
-        // Nombre d'utilisateurs ce mois
         const currentMonth = new Date().getMonth();
         const userCountMonth = await db.collection(collectionName).countDocuments({
             timestamp: { $gte: new Date(new Date().setMonth(currentMonth)) }
         });
-        bot.sendMessage(userId, `Il y a ${userCountMonth} utilisateurs ce mois-ci.`);
+        bot.sendMessage(userId, `📅 Nombre d'utilisateurs ce mois-ci : *${userCountMonth}*`, { parse_mode: "Markdown" });
+
     } else if (data === 'send_message') {
-        // Demander le message à envoyer
-        bot.sendMessage(userId, "Envoyez le message que vous souhaitez diffuser à tous les utilisateurs.");
+        bot.sendMessage(userId, "📩 Envoyez maintenant le message à diffuser (texte, image, vidéo, fichier...).");
         bot.once('message', async (message) => {
-            const userMessage = message.text;
-            // Demander confirmation de l'envoi
-            bot.sendMessage(userId, "Êtes-vous sûr de vouloir envoyer ce message à tous les utilisateurs ?\n\n" + userMessage, {
+            // Sauvegarde l'ID du message à copier
+            const messageId = message.message_id;
+            const chatId = message.chat.id;
+
+            bot.sendMessage(userId, "✅ Voulez-vous envoyer ce message à *tous les utilisateurs* ?", {
+                parse_mode: "Markdown",
                 reply_markup: {
                     inline_keyboard: [
-                        [
-                            { text: 'Oui, envoyer', callback_data: 'confirm_send' },
-                            { text: 'Non, annuler', callback_data: 'cancel_send' }
-                        ]
+                        [{ text: '✔ Oui, envoyer', callback_data: `confirm_send_${chatId}_${messageId}` }],
+                        [{ text: '❌ Non, annuler', callback_data: 'cancel_send' }]
                     ]
                 }
             });
         });
-    } else if (data === 'confirm_send') {
-        // Envoi à tous les utilisateurs
-        const userMessage = callbackQuery.message.text.replace("Êtes-vous sûr de vouloir envoyer ce message à tous les utilisateurs ?", "").trim();
-        await sendMessageToAllUsers(userMessage);
-        bot.sendMessage(userId, "Le message a été envoyé à tous les utilisateurs.");
+    } else if (data.startsWith('confirm_send_')) {
+        const parts = data.split('_');
+        const chatId = parts[2];
+        const messageId = parts[3];
+
+        sendMessageToAllUsers(chatId, messageId);
+        bot.sendMessage(userId, "📢 Message envoyé avec succès !");
     } else if (data === 'cancel_send') {
-        bot.sendMessage(userId, "Envoi du message annulé.");
+        bot.sendMessage(userId, "🚫 Envoi annulé.");
     }
 
     bot.answerCallbackQuery(callbackQuery.id);
 });
 
-// Fonction pour envoyer un message à tous les utilisateurs
-async function sendMessageToAllUsers(message) {
+// Fonction pour envoyer un message à tous les utilisateurs via copyMessage
+async function sendMessageToAllUsers(chatId, messageId) {
     try {
         const db = await connectDB();
         const users = await db.collection(collectionName).find().toArray();
+
         for (let user of users) {
             try {
-                await bot.sendMessage(user.user_id, message);
-                console.log(`✅ Message envoyé à ${user.username} (${user.user_id})`);
+                await bot.copyMessage(user.user_id, chatId, messageId);
+                console.log(`✅ Message copié à ${user.username} (${user.user_id})`);
             } catch (error) {
                 console.error(`❌ Échec d'envoi à ${user.username} (${user.user_id}):`, error.message);
             }
@@ -217,6 +214,7 @@ async function sendMessageToAllUsers(message) {
         console.error('❌ Erreur lors de l\'envoi à tous les utilisateurs:', error.message);
     }
 }
+
 
 
 
