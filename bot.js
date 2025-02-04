@@ -28,7 +28,7 @@ async function connectDB() {
 
 async function sendWelcomeMessage(userId, userName) {
     try {
-        const message = `${userName}, *félicitations\\!* 🎉\n\n🚀 Vous êtes sur le point d’intégrer un cercle _ultra sélect_ réservé aux visionnaires et aux ambitieux\\. \n\n⚠️ *ATTENTION* : Pour confirmer votre entrée et prouver que vous êtes prêt à changer de niveau, suivez ces étapes immédiatement\\!\n\n⏳ *Délai limité* : Vous avez *10 minutes* pour rejoindre les canaux ci\\-dessous\\. Après cela, votre place sera réattribuée et vous perdrez cette opportunité unique\\.\n\n🔑 *Accédez maintenant* :`;
+        const message = `🔥 *${userName}*, ton accès exclusif est prêt ! 🔥\n\n🚀⚠️ *Attention* : Pour finaliser votre adhésion et débloquer l'accès à notre communauté privée, veuillez confirmer votre présence en rejoignant les canaux ci\n\n❌ Ne reste pas en dehors du cercle fermé.\n\n👇 *Rejoins maintenant avant qu'il ne soit trop tard* :`;
         const keyboard = {
             inline_keyboard: [
                 [{ text: '🔥 Canal VIP 1', url: 'https://t.me/+r51NVBAziak5NzZk' }],
@@ -36,6 +36,7 @@ async function sendWelcomeMessage(userId, userName) {
                 [{ text: '🎯 Rejoindre le bot', url: 'https://t.me/Applepffortunebothack_bot' }]
             ]
         };
+
 
 
         console.log(`✅ Message envoyé à ${userName} (ID: ${userId})`);
