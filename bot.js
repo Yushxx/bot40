@@ -3,9 +3,9 @@ const { MongoClient } = require('mongodb');
 const http = require('http');
 
 // ⚙️ Configuration
-const token = '7914191446:AAHavIOWX1CFWFab9MaKqyj0UWFzYyqWpvE';
+const token = '6453571781:AAFLdRX_mTsjTHNunvbxYDdhZdLuDEgqVJY';
 const mongoUri = 'mongodb+srv://josh:JcipLjQSbhxbruLU@cluster0.hn4lm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const channelId = '-1002402408788';
+const channelId = '-1002237370463';
 
 const dbName = 'telegramBotDB';
 const collectionName = 'usersVF';
