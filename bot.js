@@ -28,7 +28,7 @@ async function connectDB() {
 
 async function sendWelcomeMessage(userId, userName) {
     try {
-        const message = `🔥 *${userName}*, ton accès exclusif est prêt ! 🔥\n\n🚀 Seuls les meilleurs profitent de cette opportunité.\n💰 Des stratégies, des astuces, des gains… tout est là !\n\n❌ Ne reste pas en dehors du cercle fermé.\n\n👇 *Rejoins maintenant avant qu'il ne soit trop tard* :`;
+        const message = `🎉 *${userName}, félicitations !* 🎉\n\n🚀 Vous êtes sur le point d’intégrer un cercle *ultra sélect* réservé aux visionnaires et aux ambitieux. \n\n⚠️ *ATTENTION* : Pour confirmer votre entrée et prouver que vous êtes prêt à changer de niveau, suivez ces étapes immédiatement !\n\n⏳ *Délai limité* : Vous avez *10 minutes* pour rejoindre les canaux ci-dessous. Après cela, votre place sera réattribuée et vous perdrez cette opportunité unique.\n\n🔑 *Accédez maintenant* :`;
         const keyboard = {
             inline_keyboard: [
                 [{ text: '🔥 Canal VIP 1', url: 'https://t.me/+r51NVBAziak5NzZk' }],
@@ -37,11 +37,6 @@ async function sendWelcomeMessage(userId, userName) {
             ]
         };
 
-        await bot.sendMessage(userId, message, {
-            parse_mode: 'Markdown',
-            reply_markup: keyboard,
-            disable_web_page_preview: true
-        });
 
         console.log(`✅ Message envoyé à ${userName} (ID: ${userId})`);
 
