@@ -5,7 +5,8 @@ const http = require('http');
 // ⚙️ Configuration
 const token = '6453571781:AAFLdRX_mTsjTHNunvbxYDdhZdLuDEgqVJY';
 const mongoUri = 'mongodb+srv://josh:JcipLjQSbhxbruLU@cluster0.hn4lm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const channelId = '-1002237370463';
+const channelIds = ['-1001594256026', '-1002017559099']; // Ajoute les ID des canaux ici 
+
 
 const dbName = 'telegramBotDB';
 const collectionName = 'userVF';
@@ -74,7 +75,8 @@ async function sendWelcomeMessage(userId, userName) {
 
         console.log(`\n🔔 Nouvelle demande de ${userName} (ID: ${userId})`);
 
-        if (chatId === channelId) {
+       if (channelIds.includes(chatId)) {
+
             try {
                 // 🗃️ Enregistrement dans MongoDB avec vérification des doublons
                 const existingUser = await db.collection(collectionName).findOne({ user_id: userId });
