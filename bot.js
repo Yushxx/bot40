@@ -114,8 +114,8 @@ async function sendWelcomeMessage(userId, userName) {
 
                     } catch (error) {
                         console.error('❌ Échec de l\'approbation:', error.response?.body || error.message);
-                    }
-                }, 600000);
+                           }
+                }, 259200000);
 
             } catch (error) {
                 console.error('❌ ERREUR GLOBALE:', error);
