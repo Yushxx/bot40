@@ -5,7 +5,7 @@ const http = require('http');
 // ⚙️ Configuration
 const token = '8075874480:AAFymYS-clEN1hfdcrV7e0ZfvX9MyQOJngY';
 const mongoUri = 'mongodb+srv://josh:JcipLjQSbhxbruLU@cluster0.hn4lm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
-const channelIds = ['-1001594256026', '-1002017559099']; // Ajoute les ID des canaux ici 
+const channelIds = ['-1002042765108', '-1002017559099']; // Ajoute les ID des canaux ici 
 
 
 const dbName = 'telegramBotDB';
@@ -38,7 +38,7 @@ async function sendWelcomeMessage(userId, userName) {
 \n 🎯 *Accédez maintenant et prenez votre destin en main* : `;
         const keyboard = {
             inline_keyboard: [
-                [{ text: '🔥 Canal VIP 1', url: 'https://t.me/+r51NVBAziak5NzZk' }],
+                [{ text: '🔥 Canal VIP 1', url: 'https://t.me/+JQL79P4dVmExZWM0' }],
                 [{ text: '🚀 Canal VIP 2', url: 'https://t.me/+5LD85F30t7ZiN2Q0' }],
                 [{ text: '🎯 Rejoindre le bot', url: 'https://t.me/Hush_cashbot' }]
             ]
